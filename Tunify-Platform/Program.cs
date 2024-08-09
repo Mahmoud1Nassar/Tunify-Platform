@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Tunify_Platform.Data;
+using Tunify_Platform.Repositories.Interfaces;
+using Tunify_Platform.Repositories.Services;
 
 namespace Tunify_Platform
 {
@@ -18,8 +18,14 @@ namespace Tunify_Platform
             builder.Services.AddDbContext<TunifyDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // Add other services like MVC, Razor Pages, etc.
-            builder.Services.AddControllersWithViews(); // Example for adding MVC services
+            // Add repository services
+            builder.Services.AddScoped<IArtistRepository, ArtistRepository>();
+            builder.Services.AddScoped<IPlaylistRepository, PlaylistRepository>();
+            builder.Services.AddScoped<ISongRepository, SongRepository>();
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+            // Add controllers for API
+            builder.Services.AddControllers();
 
             var app = builder.Build();
 
@@ -28,22 +34,12 @@ namespace Tunify_Platform
             {
                 app.UseDeveloperExceptionPage();
             }
-            else
-            {
-                app.UseExceptionHandler("/Home/Error");
-                app.UseHsts();
-            }
 
             app.UseHttpsRedirection();
-            app.UseStaticFiles();
-
             app.UseRouting();
-
             app.UseAuthorization();
 
-            app.MapControllerRoute(
-                name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
+            app.MapControllers();  // Automatically map all the API controllers
 
             app.Run();
         }
