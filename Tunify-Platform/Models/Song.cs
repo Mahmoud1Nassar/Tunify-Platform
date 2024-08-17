@@ -11,5 +11,7 @@
         public TimeSpan Duration { get; set; }
 
         public ICollection<PlaylistSongs> PlaylistSongs { get; set; }
+       
+
     }
 }

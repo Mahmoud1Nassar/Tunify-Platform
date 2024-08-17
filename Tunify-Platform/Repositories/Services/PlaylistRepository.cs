@@ -18,12 +18,12 @@ namespace Tunify_Platform.Repositories.Services
 
         public async Task<IEnumerable<Playlist>> GetAllPlaylistsAsync()
         {
-            return await _context.Playlists.ToListAsync();
+            return await _context.Playlists.Include(p => p.PlaylistSongs).ThenInclude(ps => ps.Song).ToListAsync();
         }
 
         public async Task<Playlist> GetPlaylistByIdAsync(int id)
         {
-            return await _context.Playlists.FindAsync(id);
+            return await _context.Playlists.Include(p => p.PlaylistSongs).ThenInclude(ps => ps.Song).FirstOrDefaultAsync(p => p.Id == id);
         }
 
         public async Task AddPlaylistAsync(Playlist playlist)
@@ -44,6 +44,16 @@ namespace Tunify_Platform.Repositories.Services
             if (playlist != null)
             {
                 _context.Playlists.Remove(playlist);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task AddSongToPlaylistAsync(int playlistId, int songId)
+        {
+            var playlist = await _context.Playlists.Include(p => p.PlaylistSongs).FirstOrDefaultAsync(p => p.Id == playlistId);
+            if (playlist != null)
+            {
+                playlist.PlaylistSongs.Add(new PlaylistSongs { PlaylistId = playlistId, SongId = songId });
                 await _context.SaveChangesAsync();
             }
         }
