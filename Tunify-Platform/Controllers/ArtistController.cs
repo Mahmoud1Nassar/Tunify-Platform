@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Tunify_Platform.Repositories.Interfaces;
 using Tunify_Platform.Models;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Tunify_Platform.Controllers
@@ -10,75 +11,37 @@ namespace Tunify_Platform.Controllers
     public class ArtistController : ControllerBase
     {
         private readonly IArtistRepository _artistRepository;
+        private readonly ISongRepository _songRepository;
 
-        public ArtistController(IArtistRepository artistRepository)
+        public ArtistController(IArtistRepository artistRepository, ISongRepository songRepository)
         {
             _artistRepository = artistRepository;
+            _songRepository = songRepository;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetArtists()
+        [HttpPost("{artistId}/songs/{songId}")]
+        public async Task<IActionResult> AddSongToArtist(int artistId, int songId)
         {
-            var artists = await _artistRepository.GetAllArtistsAsync();
-            return Ok(artists);
+            var artist = await _artistRepository.GetArtistByIdAsync(artistId);
+            if (artist == null) return NotFound();
+
+            var song = await _songRepository.GetSongByIdAsync(songId);
+            if (song == null) return NotFound();
+
+            song.ArtistId = artistId;
+            await _songRepository.UpdateSongAsync(song);
+
+            return Ok();
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetArtist(int id)
+        [HttpGet("{artistId}/songs")]
+        public async Task<IActionResult> GetSongsByArtist(int artistId)
         {
-            var artist = await _artistRepository.GetArtistByIdAsync(id);
-            if (artist == null)
-            {
-                return NotFound();
-            }
-            return Ok(artist);
-        }
+            var artist = await _artistRepository.GetArtistByIdAsync(artistId);
+            if (artist == null) return NotFound();
 
-        [HttpPost]
-        public async Task<IActionResult> CreateArtist([FromBody] Artist artist)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            await _artistRepository.AddArtistAsync(artist);
-            return CreatedAtAction(nameof(GetArtist), new { id = artist.Id }, artist);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateArtist(int id, [FromBody] Artist artist)
-        {
-            if (id != artist.Id)
-            {
-                return BadRequest();
-            }
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var existingArtist = await _artistRepository.GetArtistByIdAsync(id);
-            if (existingArtist == null)
-            {
-                return NotFound();
-            }
-
-            await _artistRepository.UpdateArtistAsync(artist);
-            return NoContent();
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteArtist(int id)
-        {
-            var artist = await _artistRepository.GetArtistByIdAsync(id);
-            if (artist == null)
-            {
-                return NotFound();
-            }
-
-            await _artistRepository.DeleteArtistAsync(id);
-            return NoContent();
+            var songs = artist.Songs.ToList();
+            return Ok(songs);
         }
     }
 }

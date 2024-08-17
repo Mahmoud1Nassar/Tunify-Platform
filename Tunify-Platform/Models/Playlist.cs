@@ -8,5 +8,6 @@
         public User User { get; set; }
 
         public ICollection<PlaylistSongs> PlaylistSongs { get; set; }
+
     }
 }

@@ -39,7 +39,7 @@ namespace Tunify_Platform.Data
             // Specify precision for the Price property
             modelBuilder.Entity<Subscription>()
                 .Property(s => s.Price)
-                .HasPrecision(18, 2); // Adjust precision and scale as needed
+                .HasPrecision(18, 2);
 
             // Modify foreign key constraints to avoid cascading deletes
             modelBuilder.Entity<Song>()
