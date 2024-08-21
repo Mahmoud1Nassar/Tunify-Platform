@@ -8,7 +8,7 @@ using Tunify_Platform.Repositories.Services;
 
 namespace Tunify_Platform
 {
-    public class Program
+    public class Program 
     {
         public static void Main(string[] args)
         {
