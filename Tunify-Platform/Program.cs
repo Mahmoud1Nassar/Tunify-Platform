@@ -27,6 +27,17 @@ namespace Tunify_Platform
             // Add controllers for API
             builder.Services.AddControllers();
 
+            // Add Swagger services
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+                {
+                    Title = "Tunify API",
+                    Version = "v1",
+                    Description = "API for managing playlists, songs, and artists in the Tunify Platform"
+                });
+            });
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -37,6 +48,19 @@ namespace Tunify_Platform
 
             app.UseHttpsRedirection();
             app.UseRouting();
+
+            // Enable Swagger middleware
+            app.UseSwagger(options =>
+            {
+                options.RouteTemplate = "swagger/{documentName}/swagger.json";
+            });
+
+            app.UseSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "Tunify API v1");
+                options.RoutePrefix = "";
+            });
+
             app.UseAuthorization();
 
             app.MapControllers();  // Automatically map all the API controllers
