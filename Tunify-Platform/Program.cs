@@ -5,10 +5,12 @@ using Microsoft.EntityFrameworkCore;
 using Tunify_Platform.Data;
 using Tunify_Platform.Repositories.Interfaces;
 using Tunify_Platform.Repositories.Services;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Identity.Client;
 
 namespace Tunify_Platform
 {
-    public class Program 
+    public class Program
     {
         public static void Main(string[] args)
         {
@@ -18,11 +20,18 @@ namespace Tunify_Platform
             builder.Services.AddDbContext<TunifyDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+            // Add Identity services
+            builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+                .AddEntityFrameworkStores<TunifyDbContext>();
+
             // Add repository services
             builder.Services.AddScoped<IArtistRepository, ArtistRepository>();
             builder.Services.AddScoped<IPlaylistRepository, PlaylistRepository>();
             builder.Services.AddScoped<ISongRepository, SongRepository>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+            // Add account service for identity management
+            builder.Services.AddScoped<IAccount, IdentityAccountService>();
 
             // Add controllers for API
             builder.Services.AddControllers();
@@ -61,6 +70,8 @@ namespace Tunify_Platform
                 options.RoutePrefix = "";
             });
 
+            // Enable authentication and authorization
+            app.UseAuthentication(); // Ensure this is placed before UseAuthorization
             app.UseAuthorization();
 
             app.MapControllers();  // Automatically map all the API controllers
