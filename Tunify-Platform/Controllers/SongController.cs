@@ -2,9 +2,11 @@
 using Tunify_Platform.Repositories.Interfaces;
 using Tunify_Platform.Models;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Tunify_Platform.Controllers
 {
+    [Authorize] // Secures all actions in this controller
     [Route("api/[controller]")]
     [ApiController]
     public class SongController : ControllerBase
@@ -34,6 +36,7 @@ namespace Tunify_Platform.Controllers
             return Ok(song);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> CreateSong([FromBody] Song song)
         {
@@ -45,6 +48,7 @@ namespace Tunify_Platform.Controllers
             return CreatedAtAction(nameof(GetSong), new { id = song.Id }, song);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateSong(int id, [FromBody] Song song)
         {
@@ -68,6 +72,7 @@ namespace Tunify_Platform.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteSong(int id)
         {

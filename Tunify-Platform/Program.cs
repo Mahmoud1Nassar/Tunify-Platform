@@ -1,12 +1,14 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Tunify_Platform.Data;
 using Tunify_Platform.Repositories.Interfaces;
 using Tunify_Platform.Repositories.Services;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Identity.Client;
+using System.Text;
 
 namespace Tunify_Platform
 {
@@ -17,23 +19,46 @@ namespace Tunify_Platform
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+
+            // Configure the DbContext with SQL Server
             builder.Services.AddDbContext<TunifyDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // Add Identity services
+            // Configure Identity services
             builder.Services.AddIdentity<IdentityUser, IdentityRole>()
-                .AddEntityFrameworkStores<TunifyDbContext>();
+                .AddEntityFrameworkStores<TunifyDbContext>()
+                .AddDefaultTokenProviders();
 
-            // Add repository services
+            // Configure JWT authentication
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+                };
+            });
+
+            // Register repository services
             builder.Services.AddScoped<IArtistRepository, ArtistRepository>();
             builder.Services.AddScoped<IPlaylistRepository, PlaylistRepository>();
             builder.Services.AddScoped<ISongRepository, SongRepository>();
             builder.Services.AddScoped<IUserRepository, UserRepository>();
 
-            // Add account service for identity management
+            // Register the account service for identity management
             builder.Services.AddScoped<IAccount, IdentityAccountService>();
 
-            // Add controllers for API
+            // Add controllers
             builder.Services.AddControllers();
 
             // Add Swagger services
@@ -50,6 +75,7 @@ namespace Tunify_Platform
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
+
             if (app.Environment.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -67,14 +93,15 @@ namespace Tunify_Platform
             app.UseSwaggerUI(options =>
             {
                 options.SwaggerEndpoint("/swagger/v1/swagger.json", "Tunify API v1");
-                options.RoutePrefix = "";
+                options.RoutePrefix = string.Empty;
             });
 
-            // Enable authentication and authorization
-            app.UseAuthentication(); // Ensure this is placed before UseAuthorization
+            // Enable authentication and authorization middleware
+            app.UseAuthentication(); // Make sure this comes before UseAuthorization
             app.UseAuthorization();
 
-            app.MapControllers();  // Automatically map all the API controllers
+            // Map controllers
+            app.MapControllers();
 
             app.Run();
         }
