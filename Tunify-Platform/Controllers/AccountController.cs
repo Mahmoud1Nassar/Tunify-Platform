@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Tunify_Platform.Repositories.Interfaces;
 using System.Threading.Tasks;
 
@@ -7,10 +8,12 @@ using System.Threading.Tasks;
 public class AccountController : ControllerBase
 {
     private readonly IAccount _accountService;
+    private readonly UserManager<IdentityUser> _userManager;
 
-    public AccountController(IAccount accountService)
+    public AccountController(IAccount accountService, UserManager<IdentityUser> userManager)
     {
         _accountService = accountService;
+        _userManager = userManager;
     }
 
     [HttpPost("register")]
@@ -38,7 +41,17 @@ public class AccountController : ControllerBase
         if (!result)
             return Unauthorized("Invalid login attempt.");
 
-        return Ok("User logged in successfully.");
+        // Find the user by username
+        var user = await _userManager.FindByNameAsync(loginDto.Username);
+        if (user == null)
+        {
+            return Unauthorized("Invalid login attempt.");
+        }
+
+        // Generate the JWT token
+        var token = await _accountService.GenerateJwtToken(user);
+
+        return Ok(new { Token = token });
     }
 
     [HttpPost("logout")]

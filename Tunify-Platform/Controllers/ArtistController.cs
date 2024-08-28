@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Tunify_Platform.Repositories.Interfaces;
-using Tunify_Platform.Models;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Tunify_Platform.Controllers
 {
+    [Authorize] // Secures all actions in this controller
     [Route("api/[controller]")]
     [ApiController]
     public class ArtistController : ControllerBase
@@ -19,6 +20,7 @@ namespace Tunify_Platform.Controllers
             _songRepository = songRepository;
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("{artistId}/songs/{songId}")]
         public async Task<IActionResult> AddSongToArtist(int artistId, int songId)
         {

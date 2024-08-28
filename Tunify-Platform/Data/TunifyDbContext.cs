@@ -1,10 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Tunify_Platform.Models;
 using System;
 
 namespace Tunify_Platform.Data
 {
-    public class TunifyDbContext : DbContext
+    public class TunifyDbContext : IdentityDbContext<IdentityUser>
     {
         public TunifyDbContext(DbContextOptions<TunifyDbContext> options)
             : base(options)
@@ -21,6 +23,8 @@ namespace Tunify_Platform.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
             // Composite key for PlaylistSongs
             modelBuilder.Entity<PlaylistSongs>()
                 .HasKey(ps => new { ps.PlaylistId, ps.SongId });
@@ -59,6 +63,37 @@ namespace Tunify_Platform.Data
                 .HasOne(u => u.Subscription)
                 .WithMany(s => s.Users)
                 .HasForeignKey(u => u.SubscriptionId);
+
+            // Seed roles
+            modelBuilder.Entity<IdentityRole>().HasData(
+                new IdentityRole { Id = "1", Name = "Admin", NormalizedName = "ADMIN" },
+                new IdentityRole { Id = "2", Name = "User", NormalizedName = "USER" }
+            );
+
+            // Create a default admin user
+            var adminUser = new IdentityUser
+            {
+                Id = "admin-user-id",
+                UserName = "admin",
+                NormalizedUserName = "ADMIN",
+                Email = "admin@tunify.com",
+                NormalizedEmail = "ADMIN@TUNIFY.COM",
+                EmailConfirmed = true,
+                SecurityStamp = Guid.NewGuid().ToString()
+            };
+
+            // Hash the password
+            var passwordHasher = new PasswordHasher<IdentityUser>();
+            adminUser.PasswordHash = passwordHasher.HashPassword(adminUser, "Admin@123");
+
+            modelBuilder.Entity<IdentityUser>().HasData(adminUser);
+
+            // Assign admin role to the admin user
+            modelBuilder.Entity<IdentityUserRole<string>>().HasData(new IdentityUserRole<string>
+            {
+                UserId = "admin-user-id",
+                RoleId = "1" // Admin role ID
+            });
 
             // Seeding initial data
             modelBuilder.Entity<User>().HasData(
